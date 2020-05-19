@@ -16,6 +16,7 @@
     "react-native-web": "~0.11.7"
   },
   "devDependencies": {
+    "expo-cli": "^3.20.9",
     "@babel/core": "^7.8.6",
     "@types/react": "~16.9.23",
     "@types/react-native": "~0.61.17",
