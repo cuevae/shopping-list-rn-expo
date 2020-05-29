@@ -1,64 +1,72 @@
-import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, SectionList } from 'react-native';
+import React, {Component} from 'react';
+import { createStore } from 'redux';
+import { Provider } from 'react-redux'
+import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList } from 'react-native';
 
-interface Section {
-  title: string,
-  data: string[]
+interface ShoppingList{
+  id: number,
+  name: string
 }
 
-const DATA: Section[] = 
-[
-  {
-    title: "Main dishes",
-    data: ["Pizza", "Burger", "Risotto"]
-  },
-  {
-    title: "Sides",
-    data: ["French Fries", "Onion Rings", "Fried Shrimps"]
-  },
-  {
-    title: "Drinks",
-    data: ["Water", "Coke", "Beer"]
-  },
-  {
-    title: "Desserts",
-    data: ["Cheese Cake", "Ice Cream"]
+interface Props{
+  shopping_lists: ShoppingList[]
+}
+
+interface State{
+  shopping_lists: ShoppingList[]
+}
+
+/* async function getDataFromPostgREST(){
+  try{
+    
+    let response = await fetch('http://192.168.10.20:3000/shopping_lists', {method: 'GET'});
+    let json = await response.json();
+    return json;
+
+  } catch(error) {
+
+    console.error(error);
+
   }
-];
+} */
 
-function ItemDisplay(itemName: string){
-  return <View style={styles.item}>
-    <Text>{itemName}</Text>
-    </View>
-}
+export default class ShoppingListDisplay extends React.Component< Props, State >{
 
-function ItemHeaderDisplay(section: {title: string}){
-  return <View>
-    <Text style={styles.header}>{section.title}</Text>
-    </View>
-}
+  constructor(props: Props){
+    super(props);
+    this.state = {
+      //Initialize to an empty list of shopping lists
+      shopping_lists: []
+    }
+  }
 
-export default function App() {
-  return (
-    <SafeAreaView style={styles.container}>
-      <Text>This is the current shopping list</Text>
-      <SectionList
-        sections = {DATA}
-        keyExtractor = {
-          (itemName: string, itemIndex: number) => 
-          {
-            return itemName + itemIndex;
-          }
-        }
-        renderItem = {
-          (itemObject: {item: string}) => ItemDisplay(itemObject.item)
-        }
-        renderSectionHeader = {
-          (sectionWrapObject: {section: {title: string}}) => ItemHeaderDisplay(sectionWrapObject.section)
-        }
-      />
-    </SafeAreaView>
-  );
+  componentDidMount(){
+    fetch('http://192.168.10.20:3000/shopping_lists', {method: 'GET'})
+    .then(
+      (response, ...rest) => {
+        let data = response.json();
+        return data;
+      })
+    .then(
+      (data, ...rest) => {
+        //Update state so the list of shopping lists gets updated with the value retrieved
+        //from database
+        this.setState({ shopping_lists: data} );
+      })
+  }
+
+  render(){
+    const shopping_lists = this.state.shopping_lists;
+    return <SafeAreaView style={styles.container}>
+    <Text>This is the current shopping list</Text>
+    <FlatList
+      data = {shopping_lists}
+      renderItem = {
+        ({ item }) => { return <View><Text>{item.name}</Text></View> }
+      }
+    />
+  </SafeAreaView>;
+  }
 }
 
 const styles = StyleSheet.create({
