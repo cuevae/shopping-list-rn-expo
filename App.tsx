@@ -3,6 +3,10 @@ import { createStore } from 'redux';
 import { Provider } from 'react-redux'
 import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList } from 'react-native';
 
+const API_URL = 'http://192.168.10.20:3000/';
+const SHOPPING_LISTS_EP = 'shopping_lists';
+const SHOPPING_LIST_ITEMS_EP = 'shopping_lists_items';
+
 interface ShoppingList{
   id: number,
   name: string
@@ -41,7 +45,7 @@ export default class ShoppingListDisplay extends React.Component< Props, State >
   }
 
   componentDidMount(){
-    fetch('http://192.168.10.20:3000/shopping_lists', {method: 'GET'})
+    fetch(API_URL + SHOPPING_LISTS_EP, {method: 'GET'})
     .then(
       (response, ...rest) => {
         let data = response.json();
