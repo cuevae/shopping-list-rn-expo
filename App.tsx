@@ -12,61 +12,66 @@ interface ShoppingList{
   name: string
 }
 
+interface ShoppingListItem{
+  id: string,
+  sl_id: number,
+  item_name: string,
+  item_qty: number
+}
+
 interface Props{
   shopping_lists: ShoppingList[]
 }
 
 interface State{
-  shopping_lists: ShoppingList[]
+  sl: ShoppingList,
+  items: ShoppingListItem[]
 }
-
-/* async function getDataFromPostgREST(){
-  try{
-    
-    let response = await fetch('http://192.168.10.20:3000/shopping_lists', {method: 'GET'});
-    let json = await response.json();
-    return json;
-
-  } catch(error) {
-
-    console.error(error);
-
-  }
-} */
 
 export default class ShoppingListDisplay extends React.Component< Props, State >{
 
   constructor(props: Props){
     super(props);
     this.state = {
-      //Initialize to an empty list of shopping lists
-      shopping_lists: []
+      sl: {
+        id: null,
+        name: ''
+      },
+      items: []
     }
   }
 
   componentDidMount(){
-    fetch(API_URL + SHOPPING_LISTS_EP, {method: 'GET'})
+
+    //get the latest shopping list created and its items
+    fetch(API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc')
     .then(
       (response, ...rest) => {
         let data = response.json();
         return data;
-      })
+      }
+    )
     .then(
       (data, ...rest) => {
-        //Update state so the list of shopping lists gets updated with the value retrieved
-        //from database
-        this.setState({ shopping_lists: data} );
-      })
+        let res = data[0];
+        let shopping_list = {id: res.id, name: res.name};
+        let shopping_list_items = res.shopping_lists_items;
+        console.log(shopping_list);
+        console.log(shopping_list_items);
+        this.setState({sl: shopping_list, items: shopping_list_items});
+      }
+    )
   }
 
   render(){
-    const shopping_lists = this.state.shopping_lists;
+    const shopping_list_name = this.state.sl.name;
+    const shopping_list_items = this.state.items;
     return <SafeAreaView style={styles.container}>
-    <Text>This is the current shopping list</Text>
+    <Text>This is the current shopping list: { shopping_list_name }</Text>
     <FlatList
-      data = {shopping_lists}
+      data = { shopping_list_items }
       renderItem = {
-        ({ item }) => { return <View><Text>{item.name}</Text></View> }
+        ({ item }) => { return <View style={styles.item}><Text>{item.item_qty} - {item.item_name}</Text></View> }
       }
     />
   </SafeAreaView>;
@@ -81,7 +86,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   item: {
-    padding: 20,
+    padding: 5,
     marginVertical: 1
   },
   header: {
