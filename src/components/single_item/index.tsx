@@ -12,7 +12,7 @@ interface SingleItemProps{
 }
 
 interface SingleItemState{
-    loading: boolean,
+    editable: boolean
 }
 
 export class SingleItem extends React.Component < SingleItemProps, SingleItemState >
@@ -24,8 +24,13 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
     constructor(props: SingleItemProps){
         super(props);
         this.state = {
-            loading: false
+            editable: false
         }
+    }
+
+    setState(state: SingleItemState ) 
+    {
+        super.setState(state);
     }
 
     handleExistingItemRemoval(existingItem : SingleItemProps)
@@ -66,18 +71,76 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
         }
     }
 
+    turnItemEditable()
+    {
+        console.log('turning editable on');
+        this.setState({editable:true});
+    }
+
     render(){
         let {name, qty} = this.props;
-        let qtyToDisplay = (qty && qty > 1) ? ' (' + `${qty}` + ')'  : '';  
-        return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3}}>
-                    <Text style={{flex:6}}>{name + qtyToDisplay}</Text>
-                    <TouchableOpacity
-                        style={styles.removeButton} 
-                        onPress={() => {this.handleExistingItemRemoval(this.props)}}
-                    >
-                        <Text style={{}}>REM</Text>
-                    </TouchableOpacity>
-                </View>
+        let enoughDetailsToSubmit = (name && name.length > 0);
+        if(this.state.editable)
+        {
+            console.log('editable now');
+            return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3 }}>
+                <TextInput
+                    placeholder={`${qty}`}
+                    placeholderTextColor='lightgray'
+                    style={{flex:1, width:5}}
+                    value= {( (qty && qty > 0) ? `${qty}` : '')}
+                    onChangeText={(text: string) => {
+                        console.log(text);
+                        //this.handleExistingItemQtyChange(text)
+                    }}
+                />
+                <TextInput
+                    placeholder={name}
+                    placeholderTextColor='lightgray'
+                    onChangeText={(text: string) => {
+                        console.log(text);
+                        //this.handleExistingItemNameChange(text)
+                    }}
+                    style={{flex:5}}
+                    value={((name && name.length > 0 ? name : ''))}
+                />
+                <TouchableOpacity
+                    style={[styles.submitButton, !enoughDetailsToSubmit ? styles.submitButtonDisabled : []]}
+                    disabled={!enoughDetailsToSubmit}
+                    onPress={() => {
+                        console.log('Save Button pressed')
+                        //this.handleNewItemSubmission()
+                    }}
+                >
+                    <Text style={{}}>UPD</Text>
+                </TouchableOpacity>
+            </View>
+        } else {
+            console.log('non - editable');
+            let {name, qty} = this.props;
+            let qtyToDisplay = (qty && qty > 1) ? ' (' + `${qty}` + ')'  : '';
+            return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3}}>
+                        <Text 
+                            style={{flex:6}}
+                            onPress={()=>{
+                                this.turnItemEditable()
+                                console.log('Press')
+                            }}
+                            onLongPress={()=>{
+                                console.log('LongPress');
+                                //this.turnItemEditable
+                            }}
+                        >
+                            {name + qtyToDisplay}
+                        </Text>
+                        <TouchableOpacity
+                            style={styles.removeButton} 
+                            onPress={() => {this.handleExistingItemRemoval(this.props)}}
+                        >
+                            <Text style={{}}>REM</Text>
+                        </TouchableOpacity>
+                    </View>
+        }
     }
 }
 
