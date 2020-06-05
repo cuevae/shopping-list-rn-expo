@@ -47,6 +47,7 @@ export default class ShoppingList extends React.Component
     }
 
     this.newItemHandler = this.newItemHandler.bind(this);
+    this.deleteItemHandler = this.deleteItemHandler.bind(this);
   }
 
   setState(arg0: { shopping_list_name?: string, items?: ShoppingListItem[], test_bool?: boolean}) {
@@ -89,17 +90,52 @@ export default class ShoppingList extends React.Component
         );
   }
 
+  deleteItemHandler(deletedItem : ShoppingListItem)
+  {
+      const sameItemsAsDeleted = (element: ShoppingListItem) => { return element.id === deletedItem.id };
+      if(this.state.items && this.state.items.length > 0)
+      {
+        let currentItems : ShoppingListItem[] = this.state.items;
+        let updatedItems;
+        let index = currentItems.findIndex(sameItemsAsDeleted);
+        if(index >= 0){
+            //First item
+            if(index === 0 ){
+                updatedItems = currentItems;
+                updatedItems.shift();
+            }
+            //Last item 
+            else if (index === currentItems.length - 1 ) 
+            {
+                updatedItems = currentItems;
+                updatedItems.pop();
+            }
+            //Any other item
+            else
+            {
+                updatedItems = currentItems.slice(0,index).concat(currentItems.slice(index+1,currentItems.length))
+            }
+        }
+
+        if(updatedItems){
+            this.setState({items:updatedItems});
+        }
+      }
+  }
+
   render()
   {
-    return <SafeAreaView style={styles.container}>
+      let parentItemAdditionHandler = this.newItemHandler;
+      let parentItemDeletionHandler = this.deleteItemHandler;
+      return <SafeAreaView style={styles.container}>
                 <View style={{marginBottom:20}}><Text style={{fontSize:20, fontWeight: 'bold'}}> {this.state.shopping_list_name} </Text></View>
-                <View><NewItem sl_id={0} name='test' qty={1} parentHandler = { this.newItemHandler } /></View>
+                <View><NewItem sl_id={0} name='test' qty={1} parentItemAdditionHandler = { parentItemAdditionHandler } /></View>
                 <FlatList
                 data = { this.state.items }
                 renderItem = {
                     function ( listEntry: { index: number, item: ShoppingListItem } ) { 
                     const item = listEntry.item;
-                    return <SingleItem id={item.id} sl_id={item.sl_id} name={item.item_name} qty={item.item_qty} />
+                    return <SingleItem id={item.id} sl_id={item.sl_id} name={item.item_name} qty={item.item_qty} parentItemDeletionHandler={ parentItemDeletionHandler } />
                     }
                 }
                 />

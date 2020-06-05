@@ -8,6 +8,7 @@ interface SingleItemProps{
     sl_id: number,
     name: string,
     qty: number
+    parentItemDeletionHandler: (deletedItem : ShoppingListItem) => void
 }
 
 interface SingleItemState{
@@ -27,6 +28,44 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
         }
     }
 
+    handleExistingItemRemoval(existingItem : SingleItemProps)
+    {
+        let {id, sl_id} = existingItem;
+        if(id && sl_id)
+        {
+            fetch(
+                constants.API_URL + 'shopping_lists_items?id=eq.' + id + '&sl_id=eq.' + sl_id,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=representation'
+                    }
+                }
+            )
+            .then(
+                (response) => {
+                    if(response.status !== 200){
+                        throw 'Item could not be deleted';
+                    }
+                    let data = response.json();
+                    return data;
+                }
+            )
+            .then(
+                (data) => {
+                    let deletedItem = data[0];
+                    this.props.parentItemDeletionHandler(deletedItem);
+                }
+            )
+            .catch(
+                //TODO: handle error
+                (error) => {console.log(error)}
+            )
+        }
+    }
+
     render(){
         let {name, qty} = this.props;
         let qtyToDisplay = (qty && qty > 1) ? ' (' + `${qty}` + ')'  : '';  
@@ -34,7 +73,7 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
                     <Text style={{flex:6}}>{name + qtyToDisplay}</Text>
                     <TouchableOpacity
                         style={styles.removeButton} 
-                        onPress={() => console.log('Remove pressed')}
+                        onPress={() => {this.handleExistingItemRemoval(this.props)}}
                     >
                         <Text style={{}}>REM</Text>
                     </TouchableOpacity>
@@ -46,7 +85,7 @@ interface NewItemProps{
     sl_id: number,
     name: string,
     qty: 1,
-    parentHandler: (newItem : ShoppingListItem) => void
+    parentItemAdditionHandler: (newItem : ShoppingListItem) => void
 }
 
 interface NewItemState{
@@ -70,8 +109,8 @@ export class NewItem extends React.Component< NewItemProps, NewItemState >
         super.setState(state);
     }
 
-    handleNewItemSubmission(){
-        
+    handleNewItemSubmission()
+    {
         let name = this.state.name;
         if(name && name.length > 0)
         {
@@ -105,7 +144,7 @@ export class NewItem extends React.Component< NewItemProps, NewItemState >
             .then(
                 (data) => {
                     let newItem = data[0];
-                    this.props.parentHandler(newItem);
+                    this.props.parentItemAdditionHandler(newItem);
                     this.setState({qty:undefined,name:''});
                 }
             )
