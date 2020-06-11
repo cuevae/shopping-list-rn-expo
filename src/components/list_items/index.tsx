@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList, ScrollView, RefreshControl } from 'react-native';
 import { SingleItem, NewItem } from '../single_item';
 import * as constants from '../../constants';
 
@@ -23,7 +23,8 @@ export interface ShoppingListProps{
 
 export interface ShoppingListState{
     shopping_list_name?: string,
-    items?: ShoppingListItem[]
+    items?: ShoppingListItem[],
+    refreshing ?: boolean
 }
 
 export interface ShoppingListProps{
@@ -43,21 +44,20 @@ export default class ShoppingList extends React.Component
     super(props);
     this.state = {
         shopping_list_name: '',
-        items: []
+        items: [],
+        refreshing: true
     }
 
     this.newItemHandler = this.newItemHandler.bind(this);
     this.deleteItemHandler = this.deleteItemHandler.bind(this);
   }
 
-  setState(arg0: { shopping_list_name?: string, items?: ShoppingListItem[], test_bool?: boolean}) {
-      super.setState(arg0);
+  setState(newState: { shopping_list_name?: string, items?: ShoppingListItem[], refreshing?: boolean}) {
+      super.setState(newState);
   }
 
-  componentDidMount(){
-
-    console.log('did mount list')
-
+  fetchItemsFromApi()
+  {
     //get the latest shopping list created and its items
     fetch(constants.API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc&shopping_lists_items.order=id.desc')
     .then(
@@ -72,11 +72,16 @@ export default class ShoppingList extends React.Component
     .then(
       (data, ...rest) => {
         let res : Store_ShoppingListItemsResponse = data[0];
-        this.setState( {shopping_list_name : res.name, items: res.shopping_lists_items, test_bool: false} );
+        this.setState( {shopping_list_name : res.name, items: res.shopping_lists_items, refreshing: false} );
       }
     )
     //todo handle error 
     .catch( (error) => { console.log(error)} )
+  }
+
+  componentDidMount(){
+    this.setState({refreshing:true});
+    this.fetchItemsFromApi();
   }
 
   newItemHandler(newItem : ShoppingListItem)
@@ -125,6 +130,11 @@ export default class ShoppingList extends React.Component
       }
   }
 
+  handleListItemsRefresh(){
+    this.setState({refreshing:true});
+    this.fetchItemsFromApi();
+  }
+
   render()
   {
       let parentItemAdditionHandler = this.newItemHandler;
@@ -138,7 +148,7 @@ export default class ShoppingList extends React.Component
                   <NewItem sl_id={0} name='' qty={1} parentItemAdditionHandler = { parentItemAdditionHandler } />
                 </View>
                 <View style={{flex:10}}>
-                  <ScrollView>
+                  <ScrollView refreshControl={<RefreshControl refreshing={this.state.refreshing ? this.state.refreshing : false} onRefresh={this.handleListItemsRefresh.bind(this)}></RefreshControl>}>
                     <FlatList
                       data = { this.state.items }
                       renderItem = {
