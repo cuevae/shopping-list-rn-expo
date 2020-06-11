@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, SectionList, FlatList, ScrollView } from 'react-native';
 import { SingleItem, NewItem } from '../single_item';
 import * as constants from '../../constants';
 
@@ -55,6 +55,8 @@ export default class ShoppingList extends React.Component
   }
 
   componentDidMount(){
+
+    console.log('did mount list')
 
     //get the latest shopping list created and its items
     fetch(constants.API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc&shopping_lists_items.order=id.desc')
@@ -127,20 +129,29 @@ export default class ShoppingList extends React.Component
   {
       let parentItemAdditionHandler = this.newItemHandler;
       let parentItemDeletionHandler = this.deleteItemHandler;
-      return <SafeAreaView style={styles.container}>
-                <View style={{marginBottom:20}}><Text style={{fontSize:20, fontWeight: 'bold'}}> {this.state.shopping_list_name} </Text></View>
-                <View><NewItem sl_id={0} name='test' qty={1} parentItemAdditionHandler = { parentItemAdditionHandler } /></View>
-                <FlatList
-                data = { this.state.items }
-                renderItem = {
-                    function ( listEntry: { index: number, item: ShoppingListItem } ) { 
-                    const item = listEntry.item;
-                    return <SingleItem id={item.id} sl_id={item.sl_id} name={item.item_name} qty={item.item_qty} parentItemDeletionHandler={ parentItemDeletionHandler } />
-                    }
-                }
-                />
-            </SafeAreaView>;
-
+      return <View style={{flex:1, alignItems:'center'}}>
+              <View style={{flex:1, justifyContent: 'center', height: 30, minHeight:30}}>
+                <Text style={{fontSize:20, fontWeight: 'bold', padding: 3}}> {this.state.shopping_list_name} </Text>
+              </View>
+              <View style={{flex:11, justifyContent:'flex-start', alignSelf:'stretch'}}>
+                <View style={{flex:1}}>
+                  <NewItem sl_id={0} name='' qty={1} parentItemAdditionHandler = { parentItemAdditionHandler } />
+                </View>
+                <View style={{flex:10}}>
+                  <ScrollView>
+                    <FlatList
+                      data = { this.state.items }
+                      renderItem = {
+                          function ( listEntry: { index: number, item: ShoppingListItem } ) { 
+                          const item = listEntry.item;
+                          return <SingleItem id={item.id} sl_id={item.sl_id} name={item.item_name} qty={item.item_qty} parentItemDeletionHandler={ parentItemDeletionHandler } />
+                          }
+                      }
+                    />
+                  </ScrollView>
+                </View>
+              </View>
+            </View>
   }
 }
 
@@ -148,8 +159,6 @@ const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: '#fff',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginTop: 10
+      alignItems: 'center'
     }
   });

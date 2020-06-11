@@ -82,7 +82,6 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
         let enoughDetailsToSubmit = (name && name.length > 0);
         if(this.state.editable)
         {
-            console.log('editable now');
             return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3 }}>
                 <TextInput
                     placeholder={`${qty}`}
@@ -116,7 +115,6 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
                 </TouchableOpacity>
             </View>
         } else {
-            console.log('non - editable');
             let {name, qty} = this.props;
             let qtyToDisplay = (qty && qty > 1) ? ' (' + `${qty}` + ')'  : '';
             return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3}}>
