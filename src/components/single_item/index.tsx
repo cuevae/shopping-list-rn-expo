@@ -12,7 +12,9 @@ interface SingleItemProps{
 }
 
 interface SingleItemState{
-    editable: boolean
+    name ?: string,
+    qty ?: number,
+    editable ?: boolean
 }
 
 export class SingleItem extends React.Component < SingleItemProps, SingleItemState >
@@ -24,6 +26,8 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
     constructor(props: SingleItemProps){
         super(props);
         this.state = {
+            name : props.name,
+            qty: props.qty,
             editable: false
         }
     }
@@ -71,35 +75,94 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
         }
     }
 
+    handleItemQtyChange( text: string ){
+        let qtyReceived = (text && text.length > 0 ) ? parseInt(text) : undefined;
+        let qtyToUse;
+        if( qtyReceived ){
+            if(qtyReceived>0 && qtyReceived < 1000)
+            {
+                qtyToUse = qtyReceived;
+            } else if(qtyReceived > 1000) {
+                //Max number of items
+                qtyToUse = 1000;
+            } else {
+                qtyToUse = 1
+            }
+        } else {
+            qtyToUse = undefined;
+        }
+        this.setState({qty: qtyToUse})
+    }
+
+    handleItemUpdate()
+    {
+        let name = this.state.name;
+        let qty = this.state.qty;
+        let id = this.props.id;
+        if(name && name.length > 0)
+        {
+            fetch(
+                constants.API_URL + 'shopping_lists_items?id=eq.' + id,
+                {
+                    method: 'PATCH',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        Prefer: 'return=representation'
+                    },
+                    body: JSON.stringify(
+                        {
+                            item_name: name,
+                            item_qty: ( qty && qty > 0 ) ? qty : 1
+                        }
+                    )
+                }
+            )
+            .then(
+                (response) => {
+                    if(response.status !== 200){
+                        throw 'Item could not be added';
+                    }
+                    let data = response.json();
+                    return data;
+                }
+            )
+            .then(
+                (data) => {
+                    let newItem = data[0];
+                    //this.props.parentItemUpdateHandler(updatedItem);
+                    this.setState({editable:false});
+                }
+            )
+            .catch(
+                //TODO: handle error
+                (error) => {console.log(error)}
+            )
+        }
+    }
+
     turnItemEditable()
     {
-        console.log('turning editable on');
         this.setState({editable:true});
     }
 
     render(){
-        let {name, qty} = this.props;
-        let enoughDetailsToSubmit = (name && name.length > 0);
         if(this.state.editable)
         {
+            let {name, qty} = this.state;
+            let enoughDetailsToSubmit = (name && name.length > 0);
             return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3 }}>
                 <TextInput
                     placeholder={`${qty}`}
                     placeholderTextColor='lightgray'
                     style={{flex:1, width:5}}
                     value= {( (qty && qty > 0) ? `${qty}` : '')}
-                    onChangeText={(text: string) => {
-                        console.log(text);
-                        //this.handleExistingItemQtyChange(text)
-                    }}
+                    onChangeText={(text: string) => {this.handleItemQtyChange(text)}}
                 />
                 <TextInput
                     placeholder={name}
                     placeholderTextColor='lightgray'
-                    onChangeText={(text: string) => {
-                        console.log(text);
-                        //this.handleExistingItemNameChange(text)
-                    }}
+                    onChangeText={(text: string) => {this.setState({name:text})}}
                     style={{flex:5}}
                     value={((name && name.length > 0 ? name : ''))}
                 />
@@ -107,26 +170,20 @@ export class SingleItem extends React.Component < SingleItemProps, SingleItemSta
                     style={[styles.submitButton, !enoughDetailsToSubmit ? styles.submitButtonDisabled : []]}
                     disabled={!enoughDetailsToSubmit}
                     onPress={() => {
-                        console.log('Save Button pressed')
-                        //this.handleNewItemSubmission()
+                        this.handleItemUpdate();
                     }}
                 >
                     <Text style={{}}>UPD</Text>
                 </TouchableOpacity>
             </View>
         } else {
-            let {name, qty} = this.props;
+            let {name, qty} = this.state;
             let qtyToDisplay = (qty && qty > 1) ? ' (' + `${qty}` + ')'  : '';
             return <View style={{flexDirection:'row', flex:1, width:300, justifyContent:'flex-start', alignItems:'center', marginBottom: 3}}>
                         <Text 
                             style={{flex:6}}
-                            onPress={()=>{
-                                this.turnItemEditable()
-                                console.log('Press')
-                            }}
                             onLongPress={()=>{
-                                console.log('LongPress');
-                                //this.turnItemEditable
+                                this.turnItemEditable()
                             }}
                         >
                             {name + qtyToDisplay}

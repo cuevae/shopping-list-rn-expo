@@ -59,7 +59,7 @@ export default class ShoppingList extends React.Component
   fetchItemsFromApi()
   {
     //get the latest shopping list created and its items
-    fetch(constants.API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc&shopping_lists_items.order=id.desc')
+    fetch(constants.API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc&shopping_lists_items.order=item_name.asc')
     .then(
       (response, ...rest) => {
         if(response.status != 200){
