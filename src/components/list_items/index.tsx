@@ -22,6 +22,7 @@ export interface ShoppingListProps{
 }
 
 export interface ShoppingListState{
+    sl_id ?: number,
     shopping_list_name?: string,
     items?: ShoppingListItem[],
     refreshing ?: boolean
@@ -29,7 +30,8 @@ export interface ShoppingListState{
 
 export interface ShoppingListProps{
     shopping_list_name: string,
-    items: ShoppingListItem[]
+    items: ShoppingListItem[],
+    client_socket: SocketIOClient.Socket
 }
 
 export default class ShoppingList extends React.Component
@@ -38,63 +40,62 @@ export default class ShoppingList extends React.Component
   //state declaration
   state: ShoppingListState;
   props: ShoppingListProps;
+  client_socket : SocketIOClient.Socket;
 
-  constructor( props: ShoppingListProps = { shopping_list_name:'', items:[] } )
+  constructor( props: ShoppingListProps )
   {
     super(props);
+    this.client_socket = props.client_socket;
     this.state = {
+        sl_id: 0,
         shopping_list_name: '',
         items: [],
         refreshing: true
     }
 
+    this.client_socket.on(constants.ITEMS_RETRIEVED, (res : Store_ShoppingListItemsResponse) => {
+      this.setState( {sl_id: res.id, shopping_list_name : res.name, items: res.shopping_lists_items, refreshing: false} );
+    });
+
+    this.client_socket.on('CLIENT_AVAILABLE_SHOPPING_LISTS', (data) => {
+      console.log('here');
+      console.log(data);
+    });
+
     this.newItemHandler = this.newItemHandler.bind(this);
     this.deleteItemHandler = this.deleteItemHandler.bind(this);
   }
 
-  setState(newState: { shopping_list_name?: string, items?: ShoppingListItem[], refreshing?: boolean}) {
-      super.setState(newState);
-  }
-
-  fetchItemsFromApi()
+  setState(newState: { sl_id ?: number, shopping_list_name?: string, items?: ShoppingListItem[], refreshing?: boolean}) 
   {
-    //get the latest shopping list created and its items
-    fetch(constants.API_URL + 'shopping_lists?select=*,shopping_lists_items(*)&limit=1&order=id.desc&shopping_lists_items.order=item_name.asc')
-    .then(
-      (response, ...rest) => {
-        if(response.status != 200){
-            throw 'Could not retrieve items';
-        }
-        let data = response.json();
-        return data;
-      }
-    )
-    .then(
-      (data, ...rest) => {
-        let res : Store_ShoppingListItemsResponse = data[0];
-        this.setState( {shopping_list_name : res.name, items: res.shopping_lists_items, refreshing: false} );
-      }
-    )
-    //todo handle error 
-    .catch( (error) => { console.log(error)} )
+    // console.log('list set state called');
+    // if(newState.items){
+    //   console.log('with items:')
+    //   console.log(newState.items);
+    // }
+    super.setState(newState);
   }
 
-  componentDidMount(){
-    this.setState({refreshing:true});
-    this.fetchItemsFromApi();
+  componentDidMount()
+  {
+    console.log('list mount called');
+    if(this.client_socket){
+      this.setState( { refreshing:true } );
+
+      this.client_socket.emit(constants.LIST_ITEMS);
+    }
   }
 
   newItemHandler(newItem : ShoppingListItem)
   {
-      let currentItems = (this.state.items && this.state.items.length > 0) ? this.state.items : [];
-      //updated list of items
-      let updatedItems = [newItem].concat(currentItems);
-      this.setState(
-          {
-              shopping_list_name : this.state.shopping_list_name,
-              items : updatedItems,
-            }
-        );
+      // let currentItems = (this.state.items && this.state.items.length > 0) ? this.state.items : [];
+      // //updated list of items
+      // let updatedItems = [newItem].concat(currentItems);
+      // this.setState(
+      //     {
+      //       items : updatedItems,
+      //     }
+      //   );
   }
 
   deleteItemHandler(deletedItem : ShoppingListItem)
@@ -132,7 +133,14 @@ export default class ShoppingList extends React.Component
 
   handleListItemsRefresh(){
     this.setState({refreshing:true});
-    this.fetchItemsFromApi();
+
+    this.client_socket.emit(constants.LIST_ITEMS);
+
+    this.client_socket.on(constants.ITEMS_RETRIEVED, (res : Store_ShoppingListItemsResponse) => {
+      this.setState( {shopping_list_name : res.name, items: res.shopping_lists_items, refreshing: false} );
+    });
+
+    //this.fetchItemsFromApi();
   }
 
   render()
@@ -145,7 +153,7 @@ export default class ShoppingList extends React.Component
               </View>
               <View style={{flex:11, justifyContent:'flex-start', alignSelf:'stretch'}}>
                 <View style={{flex:1}}>
-                  <NewItem sl_id={0} name='' qty={1} parentItemAdditionHandler = { parentItemAdditionHandler } />
+                  <NewItem sl_id={this.state.sl_id} name='' qty={1} client_socket={this.client_socket} parentItemAdditionHandler = { parentItemAdditionHandler } />
                 </View>
                 <View style={{flex:10}}>
                   <ScrollView refreshControl={<RefreshControl refreshing={this.state.refreshing ? this.state.refreshing : false} onRefresh={this.handleListItemsRefresh.bind(this)}></RefreshControl>}>

@@ -7,7 +7,7 @@ interface SingleItemProps{
     id: number,
     sl_id: number,
     name: string,
-    qty: number
+    qty: number,
     parentItemDeletionHandler: (deletedItem : ShoppingListItem) => void
 }
 
@@ -203,6 +203,7 @@ interface NewItemProps{
     sl_id: number,
     name: string,
     qty: 1,
+    client_socket: SocketIOClient.Socket,
     parentItemAdditionHandler: (newItem : ShoppingListItem) => void
 }
 
@@ -216,10 +217,12 @@ export class NewItem extends React.Component< NewItemProps, NewItemState >
 
     state: NewItemState;
     props: NewItemProps;
+    client_socket: SocketIOClient.Socket;
 
     constructor(props: NewItemProps)
     {
         super(props);
+        this.client_socket = props.client_socket;
         this.state = {}
     }
 
@@ -229,47 +232,35 @@ export class NewItem extends React.Component< NewItemProps, NewItemState >
 
     handleNewItemSubmission()
     {
+
+        console.log('handling new item submission');
+        //console.log(this.client_socket);
+
         let name = this.state.name;
         if(name && name.length > 0)
         {
-            fetch(
-                constants.API_URL + 'shopping_lists_items',
+
+            this.client_socket.emit(
+                constants.ADD_ITEM, 
                 {
-                    method: 'POST',
-                    headers: {
-                        Accept: 'application/json',
-                        'Content-Type': 'application/json',
-                        Prefer: 'return=representation'
-                    },
-                    body: JSON.stringify(
-                        {
-                            sl_id: 2,
-                            item_name: this.state.name,
-                            item_qty: this.state.qty && this.state.qty > 0 ? this.state.qty : 1
-                        }
-                    )
+                    sl_id: this.props.sl_id, 
+                    name: this.state.name, 
+                    qty: this.state.qty
                 }
-            )
-            .then(
-                (response) => {
-                    if(response.status !== 201){
-                        throw 'Item could not be added';
-                    }
-                    let data = response.json();
-                    return data;
-                }
-            )
-            .then(
-                (data) => {
-                    let newItem = data[0];
-                    this.props.parentItemAdditionHandler(newItem);
-                    this.setState({qty:undefined,name:''});
-                }
-            )
-            .catch(
-                //TODO: handle error
-                (error) => {console.log(error)}
-            )
+            );
+
+            this.setState({qty:undefined,name:''});
+
+            this.client_socket.emit(constants.LIST_ITEMS);
+
+            // this.client_socket.on(
+            //     constants.ITEM_ADDED, 
+            //     (newItem: ShoppingListItem) => {
+            //         this.props.parentItemAdditionHandler(newItem);
+            //         this.setState({qty:undefined,name:''});
+            //     }
+            // );
+
         }
     }
 
