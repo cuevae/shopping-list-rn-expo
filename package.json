@@ -8,6 +8,9 @@
     "eject": "expo eject"
   },
   "dependencies": {
+    "@react-native-community/async-storage": "^1.12.1",
+    "@react-native-community/netinfo": "^6.0.0",
+    "@redux-offline/redux-offline": "^2.6.0-expo.0",
     "expo": "~37.0.3",
     "react": "~16.9.0",
     "react-dom": "~16.9.0",
@@ -16,6 +19,9 @@
     "react-native-web": "~0.11.7",
     "react-redux": "^7.2.0",
     "redux": "^4.0.5",
+    "redux-devtools-extension": "^2.13.9",
+    "redux-persist": "^6.0.0",
+    "redux-thunk": "^2.3.0",
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
